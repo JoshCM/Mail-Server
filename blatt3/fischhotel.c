@@ -17,7 +17,7 @@ int besitzerCheck(DBRecord *record, const void *data)
 int subStringCheck(DBRecord *record, const void *data)
 {
     char *dataString = (char *)data;
-    return strstr(record->key, dataString) || strstr(record->key, dataString);
+    return strstr(record->key, dataString) || strstr(record->cat, dataString);
 }
 
 int main(int argc, char const *argv[])
@@ -76,6 +76,50 @@ int main(int argc, char const *argv[])
         else if (argc == 4)
         {
             db_put("backup.db", -1, precord);
+        }
+    }
+    else if (!strcmp(argv[1], "update") && argc == 4)
+    {
+        strcpy(record.key, argv[2]);
+        index = 0;
+        while (1)
+        {
+            index = db_search("backup.db", index, precord);
+
+            if (index < 0)
+            {
+                break;
+            }
+            strcpy(precord->value, argv[3]);
+            db_update("backup.db", precord);
+            strcpy(precord->cat, "");
+
+            index++;
+        }
+    }
+    else if (!strcmp(argv[1], "delete"))
+    {
+        if (argc == 3)
+        {
+            strcpy(record.key, argv[2]);
+            index = 0;
+            while (1)
+            {
+                index = db_search("backup.db", index, precord);
+                if (index < 0)
+                {
+                    break;
+                }
+                db_del("backup.db", index);
+                strcpy(record.cat, "");
+            }
+        }
+        else if (argc == 4)
+        {
+            strcpy(record.key,argv[2]);
+            strcpy(record.cat,argv[3]);
+            index = db_search("backup.db",0,precord);
+            db_del("backup.db", index);
         }
     }
     return 0;
