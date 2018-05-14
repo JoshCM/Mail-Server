@@ -22,7 +22,7 @@ int subStringCheck(DBRecord *record, const void *data)
 
 int main(int argc, char const *argv[])
 {
-    const char * dbPath = "backup.db";
+    const char *dbPath = "backup.db";
     DBRecord record = {"", "", ""};
     DBRecord *precord = &record;
     int index;
@@ -69,7 +69,7 @@ int main(int argc, char const *argv[])
             index = db_search(dbPath, 0, precord);
             if (index >= 0)
             {
-                printf("%s", record.value);
+                printf("%s\n", record.value);
             }
             strcpy(record.value, argv[4]);
             db_update(dbPath, precord);
@@ -117,10 +117,15 @@ int main(int argc, char const *argv[])
         }
         else if (argc == 4)
         {
-            strcpy(record.key,argv[2]);
-            strcpy(record.cat,argv[3]);
-            index = db_search(dbPath,0,precord);
+            strcpy(record.key, argv[2]);
+            strcpy(record.cat, argv[3]);
+            index = db_search(dbPath, 0, precord);
             db_del(dbPath, index);
+        }
+        else
+        {
+            printf("Leider kein passendes Command gefunden bitte überprüfe deine Ausgabe\n");
+            return -1;
         }
     }
     return 0;
