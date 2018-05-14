@@ -22,6 +22,7 @@ int subStringCheck(DBRecord *record, const void *data)
 
 int main(int argc, char const *argv[])
 {
+    const char * dbPath = "backup.db";
     DBRecord record = {"", "", ""};
     DBRecord *precord = &record;
     int index;
@@ -33,29 +34,29 @@ int main(int argc, char const *argv[])
     }
     if (!strcmp(argv[1], "list") && argc == 2)
     {
-        db_list("backup.db", 1, NULL, NULL);
+        db_list(dbPath, 1, NULL, NULL);
     }
     else if (!strcmp(argv[1], "list") && argc == 3)
     {
-        db_list("backup.db", 1, besitzerCheck, argv[2]);
+        db_list(dbPath, 1, besitzerCheck, argv[2]);
     }
     else if (!strcmp(argv[1], "search") && argc == 3)
     {
-        db_list("backup.db", 1, subStringCheck, argv[2]);
+        db_list(dbPath, 1, subStringCheck, argv[2]);
     }
     else if (!strcmp(argv[1], "add") && argc == 4)
     {
         strcpy(record.key, argv[2]);
         strcpy(record.cat, argv[3]);
         strcpy(record.value, "Gruppenaquarium");
-        index = db_search("backup.db", 0, precord);
+        index = db_search(dbPath, 0, precord);
         if (index >= 0)
         {
-            db_put("backup.db", index, precord);
+            db_put(dbPath, index, precord);
         }
         else if (index == -42)
         {
-            db_put("backup.db", -1, precord);
+            db_put(dbPath, -1, precord);
         }
     }
     else if (!strcmp(argv[1], "add") && (argc == 4 || argc == 5))
@@ -65,17 +66,17 @@ int main(int argc, char const *argv[])
         strcpy(record.value, "Gruppenaquarium");
         if (argc == 5)
         {
-            index = db_search("backup.db", 0, precord);
+            index = db_search(dbPath, 0, precord);
             if (index >= 0)
             {
                 printf("%s", record.value);
             }
             strcpy(record.value, argv[4]);
-            db_update("backup.db", precord);
+            db_update(dbPath, precord);
         }
         else if (argc == 4)
         {
-            db_put("backup.db", -1, precord);
+            db_put(dbPath, -1, precord);
         }
     }
     else if (!strcmp(argv[1], "update") && argc == 4)
@@ -84,14 +85,14 @@ int main(int argc, char const *argv[])
         index = 0;
         while (1)
         {
-            index = db_search("backup.db", index, precord);
+            index = db_search(dbPath, index, precord);
 
             if (index < 0)
             {
                 break;
             }
             strcpy(precord->value, argv[3]);
-            db_update("backup.db", precord);
+            db_update(dbPath, precord);
             strcpy(precord->cat, "");
 
             index++;
@@ -105,12 +106,12 @@ int main(int argc, char const *argv[])
             index = 0;
             while (1)
             {
-                index = db_search("backup.db", index, precord);
+                index = db_search(dbPath, index, precord);
                 if (index < 0)
                 {
                     break;
                 }
-                db_del("backup.db", index);
+                db_del(dbPath, index);
                 strcpy(record.cat, "");
             }
         }
@@ -118,8 +119,8 @@ int main(int argc, char const *argv[])
         {
             strcpy(record.key,argv[2]);
             strcpy(record.cat,argv[3]);
-            index = db_search("backup.db",0,precord);
-            db_del("backup.db", index);
+            index = db_search(dbPath,0,precord);
+            db_del(dbPath, index);
         }
     }
     return 0;
