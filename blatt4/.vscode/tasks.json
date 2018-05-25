@@ -11,6 +11,14 @@
             "args": [
                 "-g","-ansi","-Wall","-pedantic", "linebuffer.c", "-o", "linebuffer"
             ]
+        },
+        {
+            "label": "build fileindex",
+            "type": "shell",
+            "command": "cc",
+            "args": [
+                "-g","-ansi","-Wall","-pedantic", "linebuffer.c", "fileindex.c", "-o", "fileindex"
+            ]
         }
     ]
 }

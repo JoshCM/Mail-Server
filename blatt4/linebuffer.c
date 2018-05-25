@@ -30,12 +30,19 @@ void pump(LineBuffer *b)
     b->bytesread += b->end;
 }
 
+int buf_where(LineBuffer *b)
+{
+    return b->bytesread - b->end + b->here;
+}
+
 int buf_readline(LineBuffer *b, char *line, int linemax)
 {
     char lineString[linemax];
+    int linestart = buf_where(b);
     char *sep;
     int index = 0;
 
+    lineString[0] = 0;
     lineString[linemax] = 0;
 
     while (index < linemax)
@@ -45,8 +52,16 @@ int buf_readline(LineBuffer *b, char *line, int linemax)
             pump(b);
             if (b->end == 0)
             {
-                lineString[index] = 0;
-                break;
+                if (lineString[0] != 0)
+                {
+                    lineString[index] = 0;
+                    strcpy(line, lineString);
+                    return linestart;
+                }
+                else
+                {
+                    return -1;
+                }
             }
         }
 
@@ -62,14 +77,24 @@ int buf_readline(LineBuffer *b, char *line, int linemax)
         index++;
     }
     strcpy(line, lineString);
-    return 0;
+    return linestart;
 }
 
-int buf_where(LineBuffer*b)
+int buf_seek(LineBuffer *b, int seekpos)
 {
-    return b->bytesread;
+    int seek = lseek(b->descriptor, seekpos, SEEK_SET);
+
+    if (seek >= 0)
+    {
+        b->bytesread = seekpos;
+        b->here = 0;
+        b->end = 0;
+    }
+
+    return seek;
 }
 
+/** 
 int main(int argc, char const *argv[])
 {
     const char *sep = "\n";
@@ -78,13 +103,12 @@ int main(int argc, char const *argv[])
     char *line = malloc(sizeof(char) * linemax);
     int fd = open(path, O_RDONLY);
     LineBuffer *lb = buf_new(fd, sep);
-    buf_readline(lb, line, 1024);
 
-    while (*line)
+    while (buf_readline(lb, line, 1024) >= 0)
     {
         printf("%s\n", line);
-        buf_readline(lb, line, 1024);
     }
 
     return 0;
 }
+*/
