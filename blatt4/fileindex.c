@@ -155,6 +155,7 @@ int fi_compactify(FileIndex *fi)
     return 0;
 }
 
+/**
 int main(int argc, char const *argv[])
 {
     FileIndex *newFI;
@@ -165,6 +166,7 @@ int main(int argc, char const *argv[])
     foundFIE = fi_find(newFI, 1);
     foundFIE->del_flag = 1;
     fi_compactify(newFI);
-    /**fi_dispose(newFI);*/
+    fi_dispose(newFI);
     return 0;
 }
+**/

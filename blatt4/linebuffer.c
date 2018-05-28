@@ -37,8 +37,7 @@ int buf_where(LineBuffer *b)
 
 int buf_readline(LineBuffer *b, char *line, int linemax)
 {
-    const int LINEMAX = linemax;
-    char lineString[LINEMAX];
+    char *lineString = malloc(linemax);
     int linestart = buf_where(b);
     char *sep;
     int index = 0;
@@ -57,10 +56,12 @@ int buf_readline(LineBuffer *b, char *line, int linemax)
                 {
                     lineString[index] = 0;
                     strcpy(line, lineString);
+                    free(lineString);
                     return linestart;
                 }
                 else
                 {
+                    free(lineString);
                     return -1;
                 }
             }
@@ -78,6 +79,7 @@ int buf_readline(LineBuffer *b, char *line, int linemax)
         index++;
     }
     strcpy(line, lineString);
+    free(lineString);
     return linestart;
 }
 
@@ -95,7 +97,7 @@ int buf_seek(LineBuffer *b, int seekpos)
     return seek;
 }
 
-/** 
+/**
 int main(int argc, char const *argv[])
 {
     const char *sep = "\n";
@@ -112,4 +114,4 @@ int main(int argc, char const *argv[])
 
     return 0;
 }
-*/
+ */
