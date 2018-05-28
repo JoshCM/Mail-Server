@@ -37,7 +37,8 @@ int buf_where(LineBuffer *b)
 
 int buf_readline(LineBuffer *b, char *line, int linemax)
 {
-    char lineString[linemax];
+    const int LINEMAX = linemax;
+    char lineString[LINEMAX];
     int linestart = buf_where(b);
     char *sep;
     int index = 0;
