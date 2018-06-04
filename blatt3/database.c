@@ -99,7 +99,7 @@ int db_put(const char *filepath, int index, const DBRecord *record)
 
 	if (index < 0 || index > filesize)
 	{
-		writefd = open(filepath, O_WRONLY | O_APPEND);
+		writefd = open(filepath, O_WRONLY | O_APPEND | O_CREAT,0640);
 		write(writefd, record, sizeof(DBRecord));
 		close(writefd);
 	}

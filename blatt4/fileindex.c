@@ -36,7 +36,7 @@ FileIndex *fi_new(const char *filepath, const char *separator)
             break;
         }
 
-        if (!strcmp(linepointer, separator))
+        if (!strncmp(linepointer, separator, strlen(separator)))
         {
             lineStart = buf_readline(b, linepointer, LINEBUFFERSIZE);
             newFIE->seekpos = lineStart;

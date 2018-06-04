@@ -35,13 +35,14 @@ ProlResult processLine(char line[LINEMAX], int state, DialogRec dialogspec[])
 {
     ProlResult *res = malloc(sizeof(ProlResult));
     DialogRec *dlr = findDialogRec(line, dialogspec);
+    char *param = malloc(LINEMAX);
     char *linep = line;
 
     if (!dlr)
     {
         res->failed = 1;
         res->dialogrec = dlr;
-        strcpy(res->info, "Sorry hat nicht geklappt.(COMMAND_NOT_FOUND_ERRROR)");
+        strcpy(res->info, "-ERR: Sorry hat nicht geklappt.(COMMAND_NOT_FOUND_ERRROR)");
     }
     else
     {
@@ -49,11 +50,19 @@ ProlResult processLine(char line[LINEMAX], int state, DialogRec dialogspec[])
         {
             res->failed = 1;
             res->dialogrec = dlr;
-            strcpy(res->info, "Ich war noch nicht bereit dafür.(STATE_ERROR)");
+            strcpy(res->info, "-ERR: Ich war noch nicht bereit dafür.(STATE_ERROR)");
         }
         else
         {
-            strcpy(dlr->param, linep + strlen(dlr->command));
+            strcpy(param, linep + strlen(dlr->command));
+            
+            while (*param != ' ')
+            {
+                param++;
+            }
+
+            strcpy(dlr->param,param);
+
             if (dlr->validator)
             {
                 if (dlr->validator(dlr))
@@ -61,24 +70,22 @@ ProlResult processLine(char line[LINEMAX], int state, DialogRec dialogspec[])
                     res->failed = 0;
                     res->dialogrec = dlr;
                     dlr->is_valid = 1;
-                    strcpy(res->info, "Is alles in butter(SUCCESS)");
+                    strcpy(res->info, "+OK: Is alles in butter(SUCCESS)");
                 }
                 else
                 {
                     res->failed = 1;
                     res->dialogrec = dlr;
                     dlr->is_valid = 0;
-                    strcpy(res->info, "Wasn das jetzt fürn Käse?!(NON_VALID_PARAM)");
+                    strcpy(res->info, "-ERR: Wasn das jetzt fürn Käse?!(NON_VALID_PARAM)");
                 }
             }
             else
             {
-                if (dlr->validator(dlr))
-                {
-                    res->failed = 0;
-                    res->dialogrec = dlr;
-                    strcpy(res->info, "Is alles in butter(SUCCESS)");
-                }
+
+                res->failed = 0;
+                res->dialogrec = dlr;
+                strcpy(res->info, "+OK: Is alles in butter(SUCCESS)");
             }
         }
     }
