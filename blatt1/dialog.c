@@ -56,7 +56,7 @@ ProlResult processLine(char line[LINEMAX], int state, DialogRec dialogspec[])
         {
             strcpy(param, linep + strlen(dlr->command));
             
-            while (*param != ' ')
+            while (*param == ' ')
             {
                 param++;
             }

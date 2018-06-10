@@ -21,6 +21,7 @@ int process_pop3(int infd, int outfd)
         {"USER", "", 0, 1, NULL},
         {"PASS", "", 1, 2, NULL},
         {"STAT", "", 2, 2, validate_noparam},
+        {"LIST", "", 2, 2, NULL},
         {""}};
 
     LineBuffer *b = buf_new(infd, "\n");
@@ -34,6 +35,7 @@ int process_pop3(int infd, int outfd)
     int state = 0;
     ProlResult *res = malloc(sizeof(ProlResult));
     DBRecord *record = malloc(sizeof(DBRecord));
+    FileIndexEntry *fiePointer;
 
     while (linecount >= 0)
     {
@@ -46,7 +48,7 @@ int process_pop3(int infd, int outfd)
             if (!strcasecmp(command, "USER"))
             {
                 user = res->dialogrec->param;
-                write(outfd, "+OK: ", 5);
+                write(outfd, "+OK ", 5);
                 strcpy(answer, "Username Accepted");
                 write(outfd, answer, strlen(answer));
                 write(outfd, "\n", 1);
@@ -56,32 +58,59 @@ int process_pop3(int infd, int outfd)
                 strcpy(record->value, user);
                 strcpy(record->cat, "password");
                 db_search(DB_PATH, 0, record);
-                if (strcmp(res->dialogrec->param, record->value))
+                if (!strcmp(res->dialogrec->param, record->value))
                 {
                     strcpy(record->value, user);
                     strcpy(record->cat, "mailbox");
                     db_search(DB_PATH, 0, record);
-                    fi_new(record->value, "From");
-                    write(outfd, "+OK: ", 5);
+                    fi = fi_new(record->value, "From ");
+                    write(outfd, "+OK ", 4);
                     strcpy(answer, "Authentification successful");
                     write(outfd, answer, strlen(answer));
                     write(outfd, "\n", 1);
                 }
                 else
                 {
-                    write(outfd, "+OK: ", 5);
+                    write(outfd, "+OK ", 4);
                     strcpy(answer, "Authentification failed");
                     write(outfd, answer, strlen(answer));
                     write(outfd, "\n", 1);
+                    state = 0;
                     continue; /**skips the state change*/
                 }
             }
             else if (!strcasecmp(command, "stat"))
             {
-                write(outfd, "+OK: ", 5);
-                sprintf(answer, "%d", fi->nEntries);
+                write(outfd, "+OK ", 4);
+                sprintf(answer, "%d ", fi->nEntries);
+                write(outfd, answer, strlen(answer));
+                sprintf(answer, "%d", fi->totalSize);
                 write(outfd, answer, strlen(answer));
                 write(outfd, "\n", 1);
+            }
+            else if (!strcasecmp(command, "list"))
+            {
+                if (!strcmp(res->dialogrec->param, ""))
+                {
+                    write(outfd, "+OK ", 4);
+                    strcpy(answer, "scan list follows");
+                    write(outfd, answer, strlen(answer));
+                    write(outfd, "\n", 1);
+                    fiePointer = fi->entries;
+                    while (fiePointer)
+                    {
+                        sprintf(answer, "%d ", fiePointer->nr);
+                        write(outfd, answer, strlen(answer));
+                        sprintf(answer, "%d", fiePointer->size);
+                        write(outfd, answer, strlen(answer));
+                        write(outfd, "\n", 1);
+                        fiePointer = fiePointer->next;
+                    }
+                    write(outfd, ".\n", 1);
+                }else{
+                    
+                }
+                
             }
 
             state = res->dialogrec->nextstate;

@@ -19,6 +19,7 @@ FileIndex *fi_new(const char *filepath, const char *separator)
     LineBuffer *b = buf_new(fd, "\n");
     char line[LINEBUFFERSIZE];
     char *linepointer = line;
+    int templines = 0;
 
     newFI->filepath = filepath;
     newFI->entries = newFIE;
@@ -46,26 +47,41 @@ FileIndex *fi_new(const char *filepath, const char *separator)
         else if (!strcmp(linepointer, ""))
         {
             lineStart = buf_readline(b, linepointer, LINEBUFFERSIZE);
-            if(lineStart<0){
+            if (lineStart < 0)
+            {
                 continue;
             }
-            if (!strcmp(linepointer, separator))
+
+            while (1)
             {
-                newFIE->next = calloc(1, sizeof(FileIndexEntry));
-                newFI->nEntries++;
-                newFIE->size = sectionEnd - newFIE->seekpos;
-                newFI->totalSize += newFIE->size;
-                newFIE->next->nr = ++fieIndex;
-                newFIE = newFIE->next;
-                lineStart = buf_readline(b, linepointer, LINEBUFFERSIZE);
-                newFIE->seekpos = lineStart;
-                newFIE->lines += 1;
-                sectionEnd = buf_where(b);
-            }
-            else
-            {
-                newFIE->lines += 2;
-                sectionEnd = buf_where(b);
+                if (!strncmp(linepointer, separator,strlen(separator)))
+                {
+                    newFIE->next = calloc(1, sizeof(FileIndexEntry));
+                    newFI->nEntries++;
+                    newFIE->size = sectionEnd - newFIE->seekpos;
+                    newFI->totalSize += newFIE->size;
+                    newFIE->next->nr = ++fieIndex;
+                    newFIE = newFIE->next;
+                    lineStart = buf_readline(b, linepointer, LINEBUFFERSIZE);
+                    newFIE->seekpos = lineStart;
+                    newFIE->lines += 1;
+                    sectionEnd = buf_where(b);
+                    templines = 0;
+                    break;
+                }
+                else if (!strcmp(linepointer, ""))
+                {
+                    templines++;
+                    lineStart = buf_readline(b,linepointer,LINEBUFFERSIZE);
+                }
+                else
+                {
+                    templines++;
+                    newFIE->lines += templines;
+                    sectionEnd = buf_where(b);
+                    templines = 0;
+                    break;
+                }
             }
         }
         else
@@ -126,31 +142,30 @@ int fi_compactify(FileIndex *fi)
 
     while (fie)
     {
-        if(fie->del_flag){
+        if (fie->del_flag)
+        {
             fie = fie->next;
             continue;
         }
         write(newfd, seperator, strlen(seperator));
         write(newfd, b->linesep, b->lineseplen);
-        buf_seek(b,fie->seekpos);
+        buf_seek(b, fie->seekpos);
 
-        
-        for(; fie->lines > 0; fie->lines--)
+        for (; fie->lines > 0; fie->lines--)
         {
-            buf_readline(b,line,linemax);
-            write(newfd,line,strlen(line));
+            buf_readline(b, line, linemax);
+            write(newfd, line, strlen(line));
             write(newfd, b->linesep, b->lineseplen);
         }
 
-        write(newfd,b->linesep,b->lineseplen);
+        write(newfd, b->linesep, b->lineseplen);
         fie = fie->next;
-        
     }
     free(line);
     free(seperator);
     fi_dispose(fi);
-    rename(tempfilename,oldfilename);
-    newFI = fi_new(oldfilename,seperator);
+    rename(tempfilename, oldfilename);
+    newFI = fi_new(oldfilename, seperator);
     *fi = *newFI;
     return 0;
 }
