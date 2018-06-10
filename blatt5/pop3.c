@@ -108,7 +108,7 @@ int process_pop3(int infd, int outfd)
                     }
                     write(outfd, ".\n", 1);
                 }else{
-                    
+
                 }
                 
             }
