@@ -22,9 +22,11 @@ int process_pop3(int infd, int outfd)
         {"PASS", "", 1, 2, NULL},
         {"STAT", "", 2, 2, validate_noparam},
         {"LIST", "", 2, 2, NULL},
+        {"RETR", "", 2, 2, NULL},
         {""}};
 
     LineBuffer *b = buf_new(infd, "\n");
+    LineBuffer *fib;
     int linecount = 1;
     const int BUFFERZISE = 1024;
     char *buffer = malloc(BUFFERZISE);
@@ -36,6 +38,8 @@ int process_pop3(int infd, int outfd)
     ProlResult *res = malloc(sizeof(ProlResult));
     DBRecord *record = malloc(sizeof(DBRecord));
     FileIndexEntry *fiePointer;
+    int requestedIndex = 1;
+    int i;
 
     while (linecount >= 0)
     {
@@ -99,18 +103,58 @@ int process_pop3(int infd, int outfd)
                     fiePointer = fi->entries;
                     while (fiePointer)
                     {
-                        sprintf(answer, "%d ", fiePointer->nr);
-                        write(outfd, answer, strlen(answer));
-                        sprintf(answer, "%d", fiePointer->size);
-                        write(outfd, answer, strlen(answer));
-                        write(outfd, "\n", 1);
+                        if (!fiePointer->del_flag)
+                        {
+                            sprintf(answer, "%d ", fiePointer->nr);
+                            write(outfd, answer, strlen(answer));
+                            sprintf(answer, "%d", fiePointer->size);
+                            write(outfd, answer, strlen(answer));
+                            write(outfd, "\n", 1);
+                            fiePointer = fiePointer->next;
+                        }
+                    }
+                    write(outfd, ".\n", 2);
+                }
+                else
+                {
+                    requestedIndex = atoi(res->dialogrec->param);
+                    fiePointer = fi->entries;
+
+                    for (i = 1; i < requestedIndex; i++)
+                    {
                         fiePointer = fiePointer->next;
                     }
-                    write(outfd, ".\n", 1);
-                }else{
 
+                    write(outfd, "+OK ", 4);
+                    sprintf(answer, "%d ", fiePointer->nr);
+                    write(outfd, answer, strlen(answer));
+                    sprintf(answer, "%d", fiePointer->size);
+                    write(outfd, answer, strlen(answer));
+                    write(outfd, "\n", 1);
+                    fiePointer = fiePointer->next;
                 }
-                
+            }
+            else if (!strcasecmp(command, "RETR"))
+            {
+                requestedIndex = atoi(res->dialogrec->param);
+                fiePointer = fi->entries;
+                fib = buf_new(open(fi->filepath, O_RDONLY), "\n");
+
+                for (i = 1; i < requestedIndex; i++)
+                {
+                    fiePointer = fiePointer->next;
+                }
+
+                buf_seek(fib, fiePointer->seekpos);
+
+                for (i = 0; i < fiePointer->lines; i++)
+                {
+                    buf_readline(fib, buffer, BUFFERZISE);
+                    write(outfd, buffer, strlen(buffer));
+                    write(outfd, "\r\n", 2);
+                }
+
+                write(outfd, ".\n", 2);
             }
 
             state = res->dialogrec->nextstate;
@@ -130,10 +174,12 @@ int process_pop3(int infd, int outfd)
 
 int main(int argc, char const *argv[])
 {
+    /**
     DBRecord account = {"joendhard", "password", "biffel"};
     DBRecord mailbox = {"joendhard", "mailbox", "joendhard.mbox"};
     db_put(DB_PATH, -1, &account);
     db_put(DB_PATH, -1, &mailbox);
+    **/
     process_pop3(0, 1);
     return 0;
 }

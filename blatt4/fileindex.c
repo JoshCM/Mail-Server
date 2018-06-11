@@ -11,7 +11,7 @@
 
 FileIndex *fi_new(const char *filepath, const char *separator)
 {
-    int fd = open(filepath, O_RDWR | O_CREAT, 0640);
+    int fd = open(filepath, O_RDONLY | O_CREAT, 0640);
     int sectionEnd, lineStart = 0;
     int fieIndex = 1;
     FileIndex *newFI = calloc(1, sizeof(FileIndex));
@@ -20,7 +20,10 @@ FileIndex *fi_new(const char *filepath, const char *separator)
     char line[LINEBUFFERSIZE];
     char *linepointer = line;
     int templines = 0;
-
+    if (fd == -1){
+        perror("Wars nix mit oeffnen");
+        return NULL;
+    }
     newFI->filepath = filepath;
     newFI->entries = newFIE;
     newFI->nEntries++;
@@ -46,6 +49,7 @@ FileIndex *fi_new(const char *filepath, const char *separator)
         }
         else if (!strcmp(linepointer, ""))
         {
+            templines++;
             lineStart = buf_readline(b, linepointer, LINEBUFFERSIZE);
             if (lineStart < 0)
             {
@@ -54,7 +58,7 @@ FileIndex *fi_new(const char *filepath, const char *separator)
 
             while (1)
             {
-                if (!strncmp(linepointer, separator,strlen(separator)))
+                if (!strncmp(linepointer, separator, strlen(separator)))
                 {
                     newFIE->next = calloc(1, sizeof(FileIndexEntry));
                     newFI->nEntries++;
@@ -72,7 +76,7 @@ FileIndex *fi_new(const char *filepath, const char *separator)
                 else if (!strcmp(linepointer, ""))
                 {
                     templines++;
-                    lineStart = buf_readline(b,linepointer,LINEBUFFERSIZE);
+                    lineStart = buf_readline(b, linepointer, LINEBUFFERSIZE);
                 }
                 else
                 {
@@ -91,6 +95,7 @@ FileIndex *fi_new(const char *filepath, const char *separator)
         }
     }
     buf_dispose(b);
+    close(fd);
     return newFI;
 }
 
@@ -134,8 +139,8 @@ int fi_compactify(FileIndex *fi)
     LineBuffer *b = buf_new(open(fi->filepath, O_RDONLY), "\n");
     int newfd = open(tempfilename, O_WRONLY | O_CREAT | O_TRUNC, 0640);
     int linemax = 1024;
-    char *line = malloc(sizeof(char) * linemax);
-    char *seperator = malloc(sizeof(char) * linemax);
+    char *line = calloc(sizeof(char) * linemax,1);
+    char *seperator = calloc(sizeof(char) * linemax,1);
     FileIndex *newFI;
 
     buf_readline(b, seperator, linemax);
@@ -173,15 +178,23 @@ int fi_compactify(FileIndex *fi)
 /**
 int main(int argc, char const *argv[])
 {
+    char *path = "joendhard.mbox";
     FileIndex *newFI;
     FileIndexEntry *foundFIE;
+    LineBuffer *b = NULL;
+    char *line = calloc(1024,1);
+    int lines;
 
-    char *path = "first.txt";
-    newFI = fi_new(path, "/SECTION");
-    foundFIE = fi_find(newFI, 1);
-    foundFIE->del_flag = 1;
-    fi_compactify(newFI);
-    fi_dispose(newFI);
+    b = buf_new(open(path, O_RDONLY), "\n");
+    newFI = fi_new(path, "From ");
+    foundFIE = newFI->entries;
+    buf_seek(b,foundFIE->seekpos);
+    for (lines = 1; lines <= foundFIE->lines; lines++)
+    {
+        buf_readline(b, line, 1024);
+        printf("%d: %s\n", lines, line);
+    }
+
     return 0;
 }
 **/
