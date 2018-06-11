@@ -156,7 +156,6 @@ int process_pop3(int infd, int outfd)
 
                 write(outfd, ".\n", 2);
             }
-
             state = res->dialogrec->nextstate;
         }
         else
