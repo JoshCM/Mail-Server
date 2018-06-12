@@ -23,6 +23,8 @@ int process_pop3(int infd, int outfd)
         {"STAT", "", 2, 2, validate_noparam},
         {"LIST", "", 2, 2, NULL},
         {"RETR", "", 2, 2, NULL},
+        {"NOOP", "", 2, 2, validate_noparam},
+        {"DELE", "", 2, 2, NULL},
         {""}};
 
     LineBuffer *b = buf_new(infd, "\n");
@@ -39,7 +41,7 @@ int process_pop3(int infd, int outfd)
     DBRecord *record = malloc(sizeof(DBRecord));
     FileIndexEntry *fiePointer;
     int requestedIndex = 1;
-    int i;
+    int i, indexToDelete;
 
     while (linecount >= 0)
     {
@@ -118,12 +120,7 @@ int process_pop3(int infd, int outfd)
                 else
                 {
                     requestedIndex = atoi(res->dialogrec->param);
-                    fiePointer = fi->entries;
-
-                    for (i = 1; i < requestedIndex; i++)
-                    {
-                        fiePointer = fiePointer->next;
-                    }
+                    fiePointer = fi_find(fi, requestedIndex);
 
                     write(outfd, "+OK ", 4);
                     sprintf(answer, "%d ", fiePointer->nr);
@@ -137,15 +134,17 @@ int process_pop3(int infd, int outfd)
             else if (!strcasecmp(command, "RETR"))
             {
                 requestedIndex = atoi(res->dialogrec->param);
-                fiePointer = fi->entries;
+                fiePointer = fi_find(fi, requestedIndex);
                 fib = buf_new(open(fi->filepath, O_RDONLY), "\n");
 
-                for (i = 1; i < requestedIndex; i++)
-                {
-                    fiePointer = fiePointer->next;
-                }
-
                 buf_seek(fib, fiePointer->seekpos);
+                
+                strcpy(answer,"+OK ");
+                write(outfd, answer, strlen(answer));
+                sprintf(answer, "%d ", fiePointer->size);
+                write(outfd,answer,strlen(answer));
+                strcpy(answer,"octets\n");
+                write(outfd,answer,strlen(answer));
 
                 for (i = 0; i < fiePointer->lines; i++)
                 {
@@ -155,6 +154,21 @@ int process_pop3(int infd, int outfd)
                 }
 
                 write(outfd, ".\n", 2);
+            }
+            else if (!strcasecmp(command, "NOOP"))
+            {
+                strcpy(answer, "+OK ");
+                write(outfd, answer, strlen(answer));
+                write(outfd, "\n", 1);
+            }
+            else if (!strcasecmp(command, "DELE"))
+            {
+                indexToDelete = atoi(res->dialogrec->param);
+                fiePointer = fi_find(fi,indexToDelete);
+                fiePointer->del_flag = 1;
+                strcpy(answer,"+OK ");
+                write(outfd, answer, strlen(answer));
+                write(outfd,"\n",1);
             }
             state = res->dialogrec->nextstate;
         }

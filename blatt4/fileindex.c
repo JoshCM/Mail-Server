@@ -20,7 +20,8 @@ FileIndex *fi_new(const char *filepath, const char *separator)
     char line[LINEBUFFERSIZE];
     char *linepointer = line;
     int templines = 0;
-    if (fd == -1){
+    if (fd == -1)
+    {
         perror("Wars nix mit oeffnen");
         return NULL;
     }
@@ -117,16 +118,10 @@ void fi_dispose(FileIndex *fi)
 FileIndexEntry *fi_find(FileIndex *fi, int n)
 {
     FileIndexEntry *found = fi->entries;
-    while (--n)
+    int i;
+    for (i = 1; i < n; i++)
     {
-        if (found->next)
-        {
-            found = found->next;
-        }
-        else
-        {
-            return NULL;
-        }
+        found = found->next;
     }
     return found;
 }
@@ -139,8 +134,8 @@ int fi_compactify(FileIndex *fi)
     LineBuffer *b = buf_new(open(fi->filepath, O_RDONLY), "\n");
     int newfd = open(tempfilename, O_WRONLY | O_CREAT | O_TRUNC, 0640);
     int linemax = 1024;
-    char *line = calloc(sizeof(char) * linemax,1);
-    char *seperator = calloc(sizeof(char) * linemax,1);
+    char *line = calloc(sizeof(char) * linemax, 1);
+    char *seperator = calloc(sizeof(char) * linemax, 1);
     FileIndex *newFI;
 
     buf_readline(b, seperator, linemax);
