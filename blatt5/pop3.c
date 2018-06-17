@@ -6,12 +6,29 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <unistd.h>
 #include "../blatt4/linebuffer.h"
 #include "../blatt4/fileindex.h"
 #include "../blatt3/database.h"
 #include "../blatt1/dialog.h"
 
 #define DB_PATH "mail.db"
+
+int lockFile(char *path)
+{
+    int fd;
+    fd = open(path, O_WRONLY | O_CREAT | O_EXCL, 0644);
+    if (fd >= 0)
+    {
+        close(fd);
+    }
+    return fd >= 0;
+}
+
+int freeFile(char *path)
+{
+    return (unlink(path) == 0);
+}
 
 int validate_noparam(DialogRec *d);
 
@@ -25,14 +42,17 @@ int process_pop3(int infd, int outfd)
         {"RETR", "", 2, 2, NULL},
         {"NOOP", "", 2, 2, validate_noparam},
         {"DELE", "", 2, 2, NULL},
+        {"RSET", "", 2, 2, validate_noparam},
+        {"QUIT", "", 2, 0, validate_noparam},
         {""}};
 
-    LineBuffer *b = buf_new(infd, "\n");
+    LineBuffer *b = buf_new(infd, "\r\n");
     LineBuffer *fib;
     int linecount = 1;
     const int BUFFERZISE = 1024;
     char *buffer = malloc(BUFFERZISE);
     char *answer = malloc(255);
+    char *lockpath = malloc(255);
     char *user;
     char *command;
     FileIndex *fi = malloc(sizeof(FileIndex));
@@ -61,6 +81,7 @@ int process_pop3(int infd, int outfd)
             }
             else if (!strcasecmp(command, "PASS"))
             {
+                strcpy(lockpath, "/tmp/");
                 strcpy(record->value, user);
                 strcpy(record->cat, "password");
                 db_search(DB_PATH, 0, record);
@@ -69,6 +90,16 @@ int process_pop3(int infd, int outfd)
                     strcpy(record->value, user);
                     strcpy(record->cat, "mailbox");
                     db_search(DB_PATH, 0, record);
+                    strcat(lockpath, record->value);
+                    if (!lockFile(lockpath))
+                    {
+                        write(outfd, "+ERR ", 4);
+                        strcpy(answer, "You are already logged in");
+                        write(outfd, answer, strlen(answer));
+                        write(outfd, "\n", 1);
+                        state = 0;
+                        continue;
+                    }
                     fi = fi_new(record->value, "From ");
                     write(outfd, "+OK ", 4);
                     strcpy(answer, "Authentification successful");
@@ -109,11 +140,11 @@ int process_pop3(int infd, int outfd)
                         {
                             sprintf(answer, "%d ", fiePointer->nr);
                             write(outfd, answer, strlen(answer));
-                            sprintf(answer, "%d", fiePointer->size);
+                            sprintf(answer, "%d", fiePointer->size + fiePointer->lines);
                             write(outfd, answer, strlen(answer));
                             write(outfd, "\n", 1);
-                            fiePointer = fiePointer->next;
                         }
+                        fiePointer = fiePointer->next;
                     }
                     write(outfd, ".\n", 2);
                 }
@@ -125,7 +156,7 @@ int process_pop3(int infd, int outfd)
                     write(outfd, "+OK ", 4);
                     sprintf(answer, "%d ", fiePointer->nr);
                     write(outfd, answer, strlen(answer));
-                    sprintf(answer, "%d", fiePointer->size);
+                    sprintf(answer, "%d", fiePointer->size + fiePointer->lines);
                     write(outfd, answer, strlen(answer));
                     write(outfd, "\n", 1);
                     fiePointer = fiePointer->next;
@@ -138,13 +169,13 @@ int process_pop3(int infd, int outfd)
                 fib = buf_new(open(fi->filepath, O_RDONLY), "\n");
 
                 buf_seek(fib, fiePointer->seekpos);
-                
-                strcpy(answer,"+OK ");
+
+                strcpy(answer, "+OK ");
                 write(outfd, answer, strlen(answer));
                 sprintf(answer, "%d ", fiePointer->size);
-                write(outfd,answer,strlen(answer));
-                strcpy(answer,"octets\n");
-                write(outfd,answer,strlen(answer));
+                write(outfd, answer, strlen(answer));
+                strcpy(answer, "octets\n");
+                write(outfd, answer, strlen(answer));
 
                 for (i = 0; i < fiePointer->lines; i++)
                 {
@@ -164,11 +195,37 @@ int process_pop3(int infd, int outfd)
             else if (!strcasecmp(command, "DELE"))
             {
                 indexToDelete = atoi(res->dialogrec->param);
-                fiePointer = fi_find(fi,indexToDelete);
+                fiePointer = fi_find(fi, indexToDelete);
                 fiePointer->del_flag = 1;
-                strcpy(answer,"+OK ");
+                strcpy(answer, "+OK ");
                 write(outfd, answer, strlen(answer));
-                write(outfd,"\n",1);
+                strcpy(answer, "mail deleted");
+                write(outfd, answer, strlen(answer));
+                write(outfd, "\n", 1);
+            }
+            else if (!strcasecmp(command, "RSET"))
+            {
+                fiePointer = fi->entries;
+
+                while (fiePointer != NULL)
+                {
+                    fiePointer->del_flag = 0;
+                    fiePointer = fiePointer->next;
+                }
+
+                strcpy(answer, "+OK ");
+                write(outfd, answer, strlen(answer));
+                strcpy(answer, "restored deleted mails");
+                write(outfd, answer, strlen(answer));
+                write(outfd, "\n", 1);
+            }
+            else if (!strcasecmp(command, "QUIT"))
+            {
+                fi_compactify(fi);
+                strcpy(answer, "+OK session ended\n");
+                write(outfd, answer, strlen(answer));
+                freeFile(lockpath);
+                break;
             }
             state = res->dialogrec->nextstate;
         }
@@ -185,14 +242,16 @@ int process_pop3(int infd, int outfd)
     return 0;
 }
 
+/**
 int main(int argc, char const *argv[])
 {
-    /**
+
     DBRecord account = {"joendhard", "password", "biffel"};
     DBRecord mailbox = {"joendhard", "mailbox", "joendhard.mbox"};
     db_put(DB_PATH, -1, &account);
     db_put(DB_PATH, -1, &mailbox);
-    **/
+    
     process_pop3(0, 1);
     return 0;
 }
+**/
