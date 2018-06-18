@@ -6,7 +6,12 @@
         {
             "label": "build mailserver",
             "type": "shell",
-            "command": "gcc -g -ansi -Wall -pedantic ../blatt4/fileindex.c ../blatt4/linebuffer.c ../blatt1/dialog.c ../blatt3/database.c mailserver.c -o mailserver"
+            "command": "gcc -g -Wall -ansi -pedantic ../blatt4/fileindex.c ../blatt4/linebuffer.c ../blatt1/dialog.c ../blatt3/database.c mailserver.c -o mailserver"
+        },
+        {
+            "label": "clean mailserver",
+            "type": "shell",
+            "command": "killall mailserver"
         }
     ]
 }

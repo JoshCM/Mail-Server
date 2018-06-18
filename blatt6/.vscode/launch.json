@@ -19,11 +19,13 @@
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
+                    "text": "-gdb-set follow-fork-mode child",
                     "ignoreFailures": false
+                    
                 }
             ],
-            "preLaunchTask": "build mailserver"
+            "preLaunchTask": "build mailserver",
+            "postDebugTask": "clean mailserver"
         }
     ]
 }

@@ -1,3 +1,4 @@
+#define _POSIX_SOURCE 1
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -6,7 +7,8 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
-#include <unistd.h>
+#include <strings.h>
+#include <signal.h>
 #include "../blatt4/linebuffer.h"
 #include "../blatt4/fileindex.h"
 #include "../blatt3/database.h"
@@ -16,12 +18,39 @@
 
 int lockFile(char *path)
 {
-    int fd;
-    fd = open(path, O_WRONLY | O_CREAT | O_EXCL, 0644);
+    int fd, prevpid;
+    int lambdahalbe;
+    char *pid = calloc(1024, sizeof(char));
+    char *prevPidBuf = calloc(1024, sizeof(char));
+
+    sprintf(pid, "%d", getpid());
+    fd = open(path, O_RDWR | O_CREAT | O_EXCL, 0644);
     if (fd >= 0)
     {
+        write(fd, pid, strlen(pid));
         close(fd);
     }
+    else
+    {
+        fd = open(path, O_RDONLY);
+        lambdahalbe = read(fd, prevPidBuf, 1024);
+        prevPidBuf[lambdahalbe] = 0;
+        prevpid = atoi(prevPidBuf);
+        if (kill(prevpid, 0) != 0)
+        {
+            close(fd);
+            unlink(path);
+            free(pid);
+            free(prevPidBuf);
+            return lockFile(path);
+        }
+        else
+        {
+            fd = -1;
+        }
+    }
+    free(pid);
+    free(prevPidBuf);
     return fd >= 0;
 }
 
@@ -63,6 +92,7 @@ int process_pop3(int infd, int outfd)
     int requestedIndex = 1;
     int i, indexToDelete;
 
+    write(outfd,"+OK \n",6);
     while (linecount >= 0)
     {
         linecount = buf_readline(b, buffer, 1024);
@@ -90,10 +120,11 @@ int process_pop3(int infd, int outfd)
                     strcpy(record->value, user);
                     strcpy(record->cat, "mailbox");
                     db_search(DB_PATH, 0, record);
-                    strcat(lockpath, record->value);
+                    strcat(lockpath, user);
+                    strcat(lockpath,".lock");
                     if (!lockFile(lockpath))
                     {
-                        write(outfd, "+ERR ", 4);
+                        write(outfd, "+ERR ", 5);
                         strcpy(answer, "You are already logged in");
                         write(outfd, answer, strlen(answer));
                         write(outfd, "\n", 1);

@@ -9,7 +9,10 @@
 
 int main(void)
 {
-    int sockfd, newsockfd, clientlen, pid;
+    
+    int enable = 1;
+    int sockfd, newsockfd, pid;
+    unsigned int clientlen;
     struct sockaddr_in servaddr, clientaddr;
 
     servaddr.sin_family = AF_INET;
@@ -21,6 +24,9 @@ int main(void)
         perror("socket");
         exit(-1);
     }
+    
+    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
+        perror("setsockopt(SO_REUSEADDR) failed");
     if (bind(sockfd, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_in)) < 0)
     {
         perror("bind");
