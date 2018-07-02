@@ -1,0 +1,9 @@
+HELO clientname.de
+MAIL FROM:<joghurta@brautweim.de>
+RCPT TO:<j.biffel@maildingsi.nl>
+DATA
+Wie geht es Dir?
+Mir geht es gut.
+Oma auch.
+.
+QUIT
