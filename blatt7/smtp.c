@@ -78,6 +78,7 @@ int process_smtp(int infd, int outfd)
         {
             strcpy(answer, "250 OK\r\n");
             write(outfd, answer, strlen(answer));
+            state = res->dialogrec->nextstate;
         }
         else if (!strcasecmp(command, "MAIL FROM:"))
         {
@@ -89,6 +90,7 @@ int process_smtp(int infd, int outfd)
             getTimeStemp(timestamp);
             strcat(headerline, timestamp);
             write(outfd, answer, strlen(answer));
+            state = res->dialogrec->nextstate;
         }
         else if (!strcasecmp(command, "RCPT TO:"))
         {
@@ -104,6 +106,7 @@ int process_smtp(int infd, int outfd)
             strcpy(mboxPath,databaseRecord.value);
             strcpy(answer, "250 OK\r\n");
             write(outfd, answer, strlen(answer));
+            state = res->dialogrec->nextstate;
         }
         else if (!strcasecmp(command, "DATA"))
         {
@@ -113,6 +116,7 @@ int process_smtp(int infd, int outfd)
             write(mboxfd,headerline,strlen(headerline));
             write(mboxfd,"\n",1);
             write(outfd, answer, strlen(answer));
+            state = res->dialogrec->nextstate;
         }
         else if (!strcasecmp(command, "QUIT"))
         {
@@ -131,9 +135,9 @@ int process_smtp(int infd, int outfd)
     return 0;
 }
 
+    /*
 int main(void)
 {
-    /*
     DBRecord password = {"joendhard","password","biffel"};
     DBRecord mailbox = {"joendhard","mailbox","joendhard.mbox"};
     DBRecord smtp = {"j.biffel@maildingsi.nl","smtp","joendhard"};
@@ -141,7 +145,7 @@ int main(void)
     db_put(DB_PATH,-1,&password);
     db_put(DB_PATH,-1,&mailbox);
     db_put(DB_PATH,-1,&smtp);
-    */
     process_smtp(0, 1);
     return 0;
 }
+    */

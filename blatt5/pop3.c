@@ -16,6 +16,10 @@
 
 #define DB_PATH "mail.db"
 
+void myinthandler(int sig){
+    exit(0);
+}
+
 int lockFile(char *path)
 {
     int fd, prevpid;
@@ -91,6 +95,7 @@ int process_pop3(int infd, int outfd)
     FileIndexEntry *fiePointer;
     int requestedIndex = 1;
     int i, indexToDelete;
+    signal(SIGINT,myinthandler);
 
     write(outfd, "+OK\r\n", 6);
     while (linecount >= 0)
@@ -270,6 +275,7 @@ int process_pop3(int infd, int outfd)
     free(record);
     free(buffer);
     free(res);
+    signal(SIGINT,SIG_DFL);
     return 0;
 }
 
