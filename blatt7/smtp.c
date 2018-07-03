@@ -129,7 +129,6 @@ int process_smtp(int infd, int outfd)
     free(mboxPath);
     free(timestamp);
     free(mailfrom);
-    /*free(rcptto);*/
     free(answer);
     free(linebuffer);
     return 0;

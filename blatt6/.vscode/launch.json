@@ -24,7 +24,6 @@
                     
                 }
             ],
-            "preLaunchTask": "build mailserver",
             "postDebugTask": "clean mailserver"
         }
     ]

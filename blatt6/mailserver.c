@@ -27,17 +27,24 @@ int main(void)
     int smtpsock, pop3sock, newsockfd, pid;
     unsigned int clientlen;
     struct sockaddr_in pop3addr, smtpaddr, clientaddr;
+    DBRecord portPicker = {"","",""};
     fd_set socketSet;
     pthread_t tid[42];
 
     FD_ZERO(&socketSet);
     pop3addr.sin_family = AF_INET;
     pop3addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    pop3addr.sin_port = htons(POP3_PORTNUMMER);
+    strcpy(portPicker.key, "port");
+    strcpy(portPicker.cat, "pop3");
+    db_search(DB_PATH,0,&portPicker);
+    pop3addr.sin_port = htons(atoi(portPicker.value));
 
     smtpaddr.sin_family = AF_INET;
     smtpaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    smtpaddr.sin_port = htons(SMTP_PORTNUMMER);
+    strcpy(portPicker.key, "port");
+    strcpy(portPicker.cat, "smtp");
+    db_search(DB_PATH,0,&portPicker);
+    smtpaddr.sin_port = htons(atoi(portPicker.value));
 
     if ((pop3sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
