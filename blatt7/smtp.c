@@ -30,9 +30,9 @@ int process_smtp(int infd, int outfd)
 {
     DialogRec dialog[] = {
         {"HELO", "", 0, 0, NULL},
-        {"MAIL FROM:", "", 0, 0, NULL},
-        {"RCPT TO:", "", 0, 0, NULL},
-        {"DATA", "", 0, 0, NULL},
+        {"MAIL FROM:", "", 0, 1, NULL},
+        {"RCPT TO:", "", 1, 2, NULL},
+        {"DATA", "", 2, 3, NULL},
         {"QUIT", "", 0, 0, NULL},
         {""}};
 

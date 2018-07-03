@@ -92,7 +92,7 @@ int process_pop3(int infd, int outfd)
     int requestedIndex = 1;
     int i, indexToDelete;
 
-    write(outfd,"+OK \n",6);
+    write(outfd, "+OK\r\n", 6);
     while (linecount >= 0)
     {
         linecount = buf_readline(b, buffer, 1024);
@@ -121,7 +121,7 @@ int process_pop3(int infd, int outfd)
                     strcpy(record->cat, "mailbox");
                     db_search(DB_PATH, 0, record);
                     strcat(lockpath, user);
-                    strcat(lockpath,".lock");
+                    strcat(lockpath, ".lock");
                     if (!lockFile(lockpath))
                     {
                         write(outfd, "+ERR ", 5);
@@ -154,7 +154,7 @@ int process_pop3(int infd, int outfd)
                 write(outfd, answer, strlen(answer));
                 sprintf(answer, "%d", fi->totalSize);
                 write(outfd, answer, strlen(answer));
-                write(outfd, "\n", 1);
+                write(outfd, "\r\n", 2);
             }
             else if (!strcasecmp(command, "list"))
             {
@@ -163,7 +163,7 @@ int process_pop3(int infd, int outfd)
                     write(outfd, "+OK ", 4);
                     strcpy(answer, "scan list follows");
                     write(outfd, answer, strlen(answer));
-                    write(outfd, "\n", 1);
+                    write(outfd, "\r\n", 2);
                     fiePointer = fi->entries;
                     while (fiePointer)
                     {
@@ -177,7 +177,7 @@ int process_pop3(int infd, int outfd)
                         }
                         fiePointer = fiePointer->next;
                     }
-                    write(outfd, ".\n", 2);
+                    write(outfd, ".\r\n", 3);
                 }
                 else
                 {
@@ -221,7 +221,7 @@ int process_pop3(int infd, int outfd)
             {
                 strcpy(answer, "+OK ");
                 write(outfd, answer, strlen(answer));
-                write(outfd, "\n", 1);
+                write(outfd, "\r\n", 2);
             }
             else if (!strcasecmp(command, "DELE"))
             {
@@ -232,7 +232,7 @@ int process_pop3(int infd, int outfd)
                 write(outfd, answer, strlen(answer));
                 strcpy(answer, "mail deleted");
                 write(outfd, answer, strlen(answer));
-                write(outfd, "\n", 1);
+                write(outfd, "\r\n", 2);
             }
             else if (!strcasecmp(command, "RSET"))
             {
@@ -248,12 +248,12 @@ int process_pop3(int infd, int outfd)
                 write(outfd, answer, strlen(answer));
                 strcpy(answer, "restored deleted mails");
                 write(outfd, answer, strlen(answer));
-                write(outfd, "\n", 1);
+                write(outfd, "\r\n", 2);
             }
             else if (!strcasecmp(command, "QUIT"))
             {
                 fi_compactify(fi);
-                strcpy(answer, "+OK session ended\n");
+                strcpy(answer, "+OK session ended\r\n");
                 write(outfd, answer, strlen(answer));
                 freeFile(lockpath);
                 break;
@@ -263,7 +263,7 @@ int process_pop3(int infd, int outfd)
         else
         {
             write(outfd, res->info, strlen(res->info));
-            write(outfd, "\n", 1);
+            write(outfd, "\r\n", 2);
         }
     }
 

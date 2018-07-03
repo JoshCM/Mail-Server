@@ -2,47 +2,77 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <sys/select.h>
+#include <sys/time.h>
 #include <stdio.h>
 #include <unistd.h>
 
-#define POP3_PORTNUMMER 8000
+#define POP3_PORTNUMMER 8110
+#define SMTP_PORTNUMMER 8582
 
 int main(void)
 {
-    
+
     int enable = 1;
-    int sockfd, newsockfd, pid;
+    int smtpsock, pop3sock, newsockfd, pid;
     unsigned int clientlen;
-    struct sockaddr_in servaddr, clientaddr;
+    struct sockaddr_in pop3addr, smtpaddr, clientaddr;
+    fd_set socketSet;
 
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    servaddr.sin_port = htons(POP3_PORTNUMMER);
+    FD_ZERO(&socketSet);
+    pop3addr.sin_family = AF_INET;
+    pop3addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    pop3addr.sin_port = htons(POP3_PORTNUMMER);
 
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    pop3addr.sin_family = AF_INET;
+    pop3addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    pop3addr.sin_port = htons(SMTP_PORTNUMMER);
+
+    if ((pop3sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
-        perror("socket");
+        perror("pop3socket");
         exit(-1);
     }
-    
-    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
+    if ((smtpsock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    {
+        perror("smtpsocket");
+        exit(-1);
+    }
+
+    if (setsockopt(pop3sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
         perror("setsockopt(SO_REUSEADDR) failed");
 
-    if (bind(sockfd, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_in)) < 0)
+    if (bind(pop3sock, (struct sockaddr *)&pop3addr, sizeof(struct sockaddr_in)) < 0)
     {
         perror("bind");
         exit(-1);
     }
-    if (listen(sockfd, 5) < 0)
+
+    if (bind(smtpsock, (struct sockaddr *)&smtpaddr, sizeof(struct sockaddr_in) < 0))
+    {
+        perror("bindsmtp");
+        exit(-1);
+    }
+    if (listen(pop3sock, 5) < 0)
     {
         perror("listen");
         exit(-1);
     }
 
+    if (listen(smtpsock,5)<0)
+    {
+        perror("listensmtp");
+        exit(-1);
+    }
+
+    
     while (1)
     {
         clientlen = sizeof(struct sockaddr);
-        newsockfd = accept(sockfd, (struct sockaddr *)&clientaddr, &clientlen);
+        FD_SET(pop3sock,&socketSet);
+        FD_SET(smtpsock,&socketSet);
+        
+        newsockfd = accept(pop3sock, (struct sockaddr *)&clientaddr, &clientlen);
         if (newsockfd < 0)
         {
             perror("accept");
@@ -52,7 +82,7 @@ int main(void)
         if (!pid)
         {
             process_pop3(newsockfd, newsockfd);
-            close(sockfd);
+            close(pop3sock);
             break;
         }
         else
