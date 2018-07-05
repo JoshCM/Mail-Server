@@ -63,6 +63,7 @@ int main(void)
     if (setsockopt(smtpsock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
         perror("setsockopt(SO_REUSEADDR) failed");
 
+
     if (bind(pop3sock, (struct sockaddr *)&pop3addr, sizeof(struct sockaddr_in)) < 0)
     {
         perror("bind");

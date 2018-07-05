@@ -97,7 +97,8 @@ int process_pop3(int infd, int outfd)
     int i, indexToDelete;
     signal(SIGINT,myinthandler);
 
-    write(outfd, "+OK\r\n", 6);
+    strcpy(answer,"+OK POP3 ready.\r\n");
+    write(outfd, answer, strlen(answer));
     while (linecount >= 0)
     {
         linecount = buf_readline(b, buffer, 1024);
@@ -109,10 +110,7 @@ int process_pop3(int infd, int outfd)
             if (!strcasecmp(command, "USER"))
             {
                 user = res->dialogrec->param;
-                write(outfd, "+OK ", 5);
-                strcpy(answer, "Username Accepted");
-                write(outfd, answer, strlen(answer));
-                write(outfd, "\n", 1);
+                write(outfd, "+OK\r\n", 5);
             }
             else if (!strcasecmp(command, "PASS"))
             {
@@ -132,7 +130,7 @@ int process_pop3(int infd, int outfd)
                         write(outfd, "+ERR ", 5);
                         strcpy(answer, "You are already logged in");
                         write(outfd, answer, strlen(answer));
-                        write(outfd, "\n", 1);
+                        write(outfd, "\r\n", 2);
                         state = 0;
                         continue;
                     }
@@ -140,14 +138,14 @@ int process_pop3(int infd, int outfd)
                     write(outfd, "+OK ", 4);
                     strcpy(answer, "Authentification successful");
                     write(outfd, answer, strlen(answer));
-                    write(outfd, "\n", 1);
+                    write(outfd, "\r\n", 2);
                 }
                 else
                 {
                     write(outfd, "+OK ", 4);
                     strcpy(answer, "Authentification failed");
                     write(outfd, answer, strlen(answer));
-                    write(outfd, "\n", 1);
+                    write(outfd, "\r\n", 2);
                     state = 0;
                     continue; /**skips the state change*/
                 }
@@ -155,7 +153,7 @@ int process_pop3(int infd, int outfd)
             else if (!strcasecmp(command, "stat"))
             {
                 write(outfd, "+OK ", 4);
-                sprintf(answer, "%d ", fi->nEntries);
+                sprintf(answer, "%d ", fi->nEntries-1);
                 write(outfd, answer, strlen(answer));
                 sprintf(answer, "%d", fi->totalSize);
                 write(outfd, answer, strlen(answer));
@@ -178,7 +176,7 @@ int process_pop3(int infd, int outfd)
                             write(outfd, answer, strlen(answer));
                             sprintf(answer, "%d", fiePointer->size + fiePointer->lines);
                             write(outfd, answer, strlen(answer));
-                            write(outfd, "\n", 1);
+                            write(outfd, "\r\n", 2);
                         }
                         fiePointer = fiePointer->next;
                     }
@@ -194,7 +192,7 @@ int process_pop3(int infd, int outfd)
                     write(outfd, answer, strlen(answer));
                     sprintf(answer, "%d", fiePointer->size + fiePointer->lines);
                     write(outfd, answer, strlen(answer));
-                    write(outfd, "\n", 1);
+                    write(outfd, "\r\n", 2);
                     fiePointer = fiePointer->next;
                 }
             }
@@ -210,7 +208,7 @@ int process_pop3(int infd, int outfd)
                 write(outfd, answer, strlen(answer));
                 sprintf(answer, "%d ", fiePointer->size);
                 write(outfd, answer, strlen(answer));
-                strcpy(answer, "octets\n");
+                strcpy(answer, "octets\r\n");
                 write(outfd, answer, strlen(answer));
 
                 for (i = 0; i < fiePointer->lines; i++)
@@ -220,7 +218,7 @@ int process_pop3(int infd, int outfd)
                     write(outfd, "\r\n", 2);
                 }
 
-                write(outfd, ".\n", 2);
+                write(outfd, ".\r\n", 3);
             }
             else if (!strcasecmp(command, "NOOP"))
             {
