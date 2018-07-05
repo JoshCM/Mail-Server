@@ -74,7 +74,7 @@ int process_smtp(int infd, int outfd)
         *res = processLine(linebuffer, state, dialog);
         command = res->dialogrec->command;
         param = res->dialogrec->param;
-        if (!strcasecmp(command, "ehLO"))
+        if (!strcasecmp(command, "HELO"))
         {
             strcpy(answer, "250 OK\r\n");
             write(outfd, answer, strlen(answer));
