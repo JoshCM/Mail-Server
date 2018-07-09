@@ -57,7 +57,9 @@ int process_smtp(int infd, int outfd)
 
     while (1)
     {
-        buf_readline(b, linebuffer, 1024);
+        if (buf_readline(b, linebuffer, 1024)<0){
+            break;
+        }
         if (dataiscomming)
         {
             
@@ -65,6 +67,8 @@ int process_smtp(int infd, int outfd)
             {
                 write(mboxfd,"\n",1);
                 dataiscomming = 0;
+                strcpy(answer, "250 OK\r\n");
+                write(outfd, answer, strlen(answer));
                 continue;
             }
             write(mboxfd,linebuffer,strlen(linebuffer));
@@ -72,6 +76,11 @@ int process_smtp(int infd, int outfd)
             continue;
         }
         *res = processLine(linebuffer, state, dialog);
+        if(res->failed){
+            strcpy(answer,"502 Wrong Command\r\n");
+            write(outfd,answer,strlen(answer));
+            continue;
+        }
         command = res->dialogrec->command;
         param = res->dialogrec->param;
         if (!strcasecmp(command, "HELO"))
@@ -82,6 +91,8 @@ int process_smtp(int infd, int outfd)
         }
         else if (!strcasecmp(command, "MAIL FROM:"))
         {
+            param[strlen(param)-1] = 0;
+            param++;
             strcpy(mailfrom, param);
             strcpy(answer, "250 OK\r\n");
             strcpy(headerline, "From ");

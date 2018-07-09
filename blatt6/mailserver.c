@@ -22,9 +22,8 @@ void *createThread(void *sock)
 
 int main(void)
 {
-
     int enable = 1;
-    int smtpsock, pop3sock, newsockfd, pid;
+    int smtpsock, pop3sock, newsockfd, pid = 0;
     unsigned int clientlen;
     struct sockaddr_in pop3addr, smtpaddr, clientaddr;
     DBRecord portPicker = {"","",""};
@@ -45,6 +44,7 @@ int main(void)
     strcpy(portPicker.cat, "smtp");
     db_search(DB_PATH,0,&portPicker);
     smtpaddr.sin_port = htons(atoi(portPicker.value));
+
 
     if ((pop3sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
@@ -108,7 +108,7 @@ int main(void)
                 perror("accept");
                 exit(-1);
             }
-            pid = fork();
+            /*pid = fork();*/
             if (!pid)
             {
                 process_pop3(newsockfd, newsockfd);

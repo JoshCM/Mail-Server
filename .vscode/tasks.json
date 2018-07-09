@@ -7,6 +7,16 @@
             "label": "build pop3",
             "type": "shell",
             "command": "gcc -g -ansi -Wall -pedantic ./blatt4/fileindex.c ./blatt4/linebuffer.c ./blatt1/dialog.c ./blatt3/database.c ./blatt5/pop3.c -o pop3"
+        },
+        {
+            "label": "delete mailserver",
+            "type": "shell",
+            "command":"rm blatt6/mailserver"
+        },
+        {
+            "label":"build mailserver",
+            "type":"shell",
+            "command":"echo hallo"
         }
     ]
 }

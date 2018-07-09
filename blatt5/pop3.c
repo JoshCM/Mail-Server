@@ -16,7 +16,8 @@
 
 #define DB_PATH "mail.db"
 
-void myinthandler(int sig){
+void myinthandler(int sig)
+{
     exit(0);
 }
 
@@ -94,14 +95,19 @@ int process_pop3(int infd, int outfd)
     DBRecord *record = malloc(sizeof(DBRecord));
     FileIndexEntry *fiePointer;
     int requestedIndex = 1;
-    int i, indexToDelete;
-    signal(SIGINT,myinthandler);
+    int i, indexToDelete, totalFileSize = 0, undeletedFie = 0;
+    signal(SIGINT, myinthandler);
 
-    strcpy(answer,"+OK POP3 ready.\r\n");
+    strcpy(answer, "+OK POP3 ready.\r\n");
     write(outfd, answer, strlen(answer));
-    while (linecount >= 0)
+    while (1)
     {
         linecount = buf_readline(b, buffer, 1024);
+        if (linecount < 0)
+        {
+            break;
+        }
+
         *res = processLine(buffer, state, dialog);
 
         if (!res->failed)
@@ -127,7 +133,7 @@ int process_pop3(int infd, int outfd)
                     strcat(lockpath, ".lock");
                     if (!lockFile(lockpath))
                     {
-                        write(outfd, "+ERR ", 5);
+                        write(outfd, "-ERR ", 5);
                         strcpy(answer, "You are already logged in");
                         write(outfd, answer, strlen(answer));
                         write(outfd, "\r\n", 2);
@@ -153,11 +159,34 @@ int process_pop3(int infd, int outfd)
             else if (!strcasecmp(command, "stat"))
             {
                 write(outfd, "+OK ", 4);
-                sprintf(answer, "%d ", fi->nEntries-1);
-                write(outfd, answer, strlen(answer));
-                sprintf(answer, "%d", fi->totalSize);
-                write(outfd, answer, strlen(answer));
+
+                if (!fi->totalSize)
+                {
+                    sprintf(answer, "%d ", 0);
+                    write(outfd, answer, strlen(answer));
+                    sprintf(answer, "%d", fi->totalSize);
+                    write(outfd, answer, strlen(answer));
+                }
+                else
+                {
+                    fiePointer = fi->entries;
+                    while (fiePointer)
+                    {
+                        if (!fiePointer->del_flag)
+                        {
+                            totalFileSize += fiePointer->size + fiePointer->lines;
+                            undeletedFie++;
+                        }
+                        fiePointer = fiePointer->next;
+                    }
+                    sprintf(answer, "%d ", undeletedFie);
+                    write(outfd, answer, strlen(answer));
+                    sprintf(answer, "%d", totalFileSize);
+                    write(outfd, answer, strlen(answer));
+                }
                 write(outfd, "\r\n", 2);
+                totalFileSize = 0;
+                undeletedFie = 0;
             }
             else if (!strcasecmp(command, "list"))
             {
@@ -265,7 +294,7 @@ int process_pop3(int infd, int outfd)
         }
         else
         {
-            write(outfd, res->info, strlen(res->info));
+            write(outfd, "-ERR ", strlen("-ERR "));
             write(outfd, "\r\n", 2);
         }
     }
@@ -273,7 +302,7 @@ int process_pop3(int infd, int outfd)
     free(record);
     free(buffer);
     free(res);
-    signal(SIGINT,SIG_DFL);
+    signal(SIGINT, SIG_DFL);
     return 0;
 }
 

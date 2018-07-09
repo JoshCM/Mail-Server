@@ -4,25 +4,28 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
-            "name": "(gdb) Launch",
+            "name": "Launch Mailserver",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/blatt5/pop3",
+            "program": "${workspaceFolder}/blatt6/mailserver",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/blatt6",
             "environment": [],
             "externalConsole": true,
             "MIMode": "gdb",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
+                    "text": "-gdb-set follow-fork-mode child",
+                    "ignoreFailures": false
+                    
                 }
             ],
-            "preLaunchTask": "build pop3"
+            "postDebugTask": "delete mailserver",
+            "preLaunchTask": "build mailserver"
         }
     ]
 }
