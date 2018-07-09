@@ -108,7 +108,7 @@ int main(void)
                 perror("accept");
                 exit(-1);
             }
-            /*pid = fork();*/
+            pid = fork();
             if (!pid)
             {
                 process_pop3(newsockfd, newsockfd);

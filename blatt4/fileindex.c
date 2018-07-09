@@ -78,6 +78,10 @@ FileIndex *fi_new(const char *filepath, const char *separator)
                 {
                     templines++;
                     lineStart = buf_readline(b, linepointer, LINEBUFFERSIZE);
+                    if (lineStart < 0)
+                    {
+                        break;
+                    }
                 }
                 else
                 {
