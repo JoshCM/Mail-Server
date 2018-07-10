@@ -19,7 +19,7 @@ FileIndex *fi_new(const char *filepath, const char *separator)
     LineBuffer *b = buf_new(fd, "\n");
     char line[LINEBUFFERSIZE];
     char *linepointer = line;
-    int templines = 0;
+    int templines = 0, firstSeperator = 0;
     if (fd == -1)
     {
         perror("Wars nix mit oeffnen");
@@ -34,15 +34,22 @@ FileIndex *fi_new(const char *filepath, const char *separator)
     while (1)
     {
         lineStart = buf_readline(b, linepointer, LINEBUFFERSIZE);
+        
         if (lineStart < 0)
         {
             newFIE->size = sectionEnd - newFIE->seekpos;
             newFI->totalSize += newFIE->size;
             break;
         }
+        
+        if(!strcmp(linepointer,"")&& !firstSeperator)
+        {
+            continue;
+        }
 
         if (!strncmp(linepointer, separator, strlen(separator)))
         {
+            firstSeperator = 1;
             lineStart = buf_readline(b, linepointer, LINEBUFFERSIZE);
             newFIE->seekpos = lineStart;
             newFIE->lines += 1;

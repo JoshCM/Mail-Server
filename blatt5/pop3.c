@@ -1,4 +1,4 @@
-#define _POSIX_SOURCE 1
+ #define _POSIX_SOURCE 1
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -302,6 +302,7 @@ int process_pop3(int infd, int outfd)
     free(record);
     free(buffer);
     free(res);
+    fi_dispose(fi);
     signal(SIGINT, SIG_DFL);
     return 0;
 }
