@@ -129,8 +129,9 @@ int main(void)
                 perror("accept");
                 exit(-1);
             }
+            
             pthread_create(&tid[zaehler], NULL, createThread, &newsockfd);
-            pthread_detach(zaehler);
+            /*pthread_detach(zaehler);*/
             zaehler++;
             
         }
